@@ -54,7 +54,7 @@ namespace CameraController
             }
 
             if (IsViewBlocked(desiredCameraPos, out Vector3 blockedPos))
-                cameraTransform.position = GetBlockedPosition(currentPosition, currentRotation, blockedPos);
+                cameraTransform.position = GetBlockedPosition(currentPosition, currentRotation, cameraTransform.position, blockedPos);
             else GoToDesiredCameraPos(cameraTransform.position, currentRotation, desiredCameraPos);
 
             MakeCameraLookTarget();
@@ -97,9 +97,9 @@ namespace CameraController
         /// </summary>
         /// <param name="position">the position the camera follows</param>
         /// <param name="rotation">the rotation applied to the camera offset</param>
+        /// <param name="currentPosition">the current position of the camera</param>
         /// <param name="hitPosition">the position at wich an object bloxking the view was detected</param>
-        /// <returns>The position the camera need to be at</returns>
-        private Vector3 GetBlockedPosition(Vector3 position, Quaternion rotation, Vector3 hitPosition)
+        private Vector3 GetBlockedPosition(Vector3 position, Quaternion rotation, Vector3 currentPosition, Vector3 hitPosition)
         {
             CollisionDetection collisionParams = collisionParameters.collisionDetection;
 
@@ -109,7 +109,12 @@ namespace CameraController
 
             Vector3 cameraPos = position + rotation * currentOffset;
 
-            return cameraPos;
+            //Check if the target is inside the camera
+            if (Physics.CheckSphere(cameraPos, collisionParams.colliderRadius))
+            {
+                return currentPosition;
+            }
+            else return cameraPos;
         }
 
         /// <summary>
