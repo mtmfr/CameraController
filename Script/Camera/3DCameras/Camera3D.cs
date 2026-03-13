@@ -196,7 +196,7 @@ namespace CameraController
         /// </summary>
         /// <param name="newYawLimits"></param>
         /// <param name="newPitchLimits"></param>
-        protected void SetRotationLimits(RotationLimits newYawLimits, RotationLimits newPitchLimits)
+        public void SetRotationLimits(RotationLimits newYawLimits, RotationLimits newPitchLimits)
         {
             yawRotationLimits = newYawLimits;
             pitchRotationLimits = newPitchLimits;
