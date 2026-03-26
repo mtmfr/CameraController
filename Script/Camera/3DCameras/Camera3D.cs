@@ -25,8 +25,34 @@ namespace CameraController
         [Tooltip("Limits of the rotation on the y axis of the camera")]
         [SerializeField] private RotationLimits yawRotationLimits;
 
+        [Header("Input")]
         [SerializeField] private InputActionReference look;
+        [SerializeField, Vector2Min(0.1f, 0.1f)] protected Vector2 sensitivity;
         private Vector2 lookInputDir;
+
+        public float horizontalSensitivity
+        {
+            get
+            {
+                return sensitivity.x;
+            }
+            set
+            {
+                sensitivity.x = value > 0.1f ? value : 0.1f;
+            }
+        }
+
+        public float verticalSensitivity
+        {
+            get
+            {
+                return sensitivity.y;
+            }
+            set
+            {
+                sensitivity.y = value > 0.1f ? value : 0.1f;
+            }
+        }
 
         protected virtual void OnEnable()
         {
@@ -65,7 +91,8 @@ namespace CameraController
 #endif
             try
             {
-                lookInputDir = context.ReadValue<Vector2>();
+                Vector2 readInput = context.ReadValue<Vector2>();
+                lookInputDir = Vector2.Scale(readInput, sensitivity);
             }
             catch (InvalidOperationException)
             {
@@ -87,8 +114,8 @@ namespace CameraController
         /// </summary>
         private void SetTargetFollowerRotation()
         {
-            Quaternion yawRotationToApply = Quaternion.Euler(0, lookInputDir.x * yawRotationLimits.Sensitivity, 0);
-            Quaternion pitchRotationToApply = Quaternion.Euler(-lookInputDir.y * pitchRotationLimits.Sensitivity, 0, 0);
+            Quaternion yawRotationToApply = Quaternion.Euler(0, lookInputDir.x, 0);
+            Quaternion pitchRotationToApply = Quaternion.Euler(-lookInputDir.y, 0, 0);
 
             yawRotation = GetNewRotation(yawRotation, yawRotationToApply, Vector3.up, yawRotationLimits);
             pitchRotation = GetNewRotation(pitchRotation, pitchRotationToApply, Vector3.right, pitchRotationLimits);

@@ -57,7 +57,7 @@ namespace CameraController
                 cameraTransform.position = GetBlockedPosition(currentPosition, currentRotation, cameraTransform.position, blockedPos);
             else GoToDesiredCameraPos(cameraTransform.position, currentRotation, desiredCameraPos);
 
-            MakeCameraLookTarget();
+            MakeCameraLookAtTarget();
         }
 
         /// <summary>
@@ -146,9 +146,9 @@ namespace CameraController
             }
         }
 
-        private void MakeCameraLookTarget()
+        private void MakeCameraLookAtTarget()
         {
-            Quaternion cameraRotation = Quaternion.LookRotation(targetFollower.position - cameraTransform.position);
+            Quaternion cameraRotation = Quaternion.LookRotation(target.position - cameraTransform.position);
 
             cameraTransform.rotation = cameraRotation;
         }
@@ -162,8 +162,10 @@ namespace CameraController
             ThirdPersonCamera cam = toCreate.GetComponent<ThirdPersonCamera>();
             cam.offset = new Vector3(0, 0, -10);
 
-            RotationLimits newYawLimits = new(-180, 180, 0.7f, true);
-            RotationLimits newPitchLimits = new(-40, 40, 0.7f, false);
+            RotationLimits newYawLimits = new(-180, 180, true);
+            RotationLimits newPitchLimits = new(-40, 40, false);
+
+            cam.sensitivity = new Vector2(0.7f, 0.7f);
 
             cam.SetRotationLimits(newYawLimits, newPitchLimits);
             cam.followDamping = 0.5f;

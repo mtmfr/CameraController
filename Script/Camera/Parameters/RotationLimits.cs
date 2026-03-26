@@ -8,7 +8,6 @@ namespace CameraController
     {
         [SerializeField, Clamp(-180, 180)] private float minAngleValue;
         [SerializeField, Clamp(-180, 180)] private float maxAngleValue;
-        [SerializeField, Min(0.1f)] private float sensitivity;
         [SerializeField] private bool wrap;
 
         private float preserializedMinAngle;
@@ -16,19 +15,15 @@ namespace CameraController
 
         public readonly float MinAngle => minAngleValue;
         public readonly float MaxAngle => maxAngleValue;
-        public readonly float Sensitivity => sensitivity;
         public readonly bool Wrap => wrap;
 
-        public RotationLimits(float minAngle, float maxAngle, float sensitivity, bool wrap)
+        public RotationLimits(float minAngle, float maxAngle, bool wrap)
         {
             minAngleValue = Mathf.Clamp(minAngle, -180f, 180f);
             maxAngleValue = Mathf.Clamp(maxAngle, -180f, 180f);
             preserializedMinAngle = Mathf.Clamp(minAngle, -180f, 180f);
             preserializedMaxAngle = maxAngle;
 
-            if (sensitivity < 0)
-                sensitivity = 0;
-            this.sensitivity = sensitivity;
             this.wrap = wrap;
         }
 

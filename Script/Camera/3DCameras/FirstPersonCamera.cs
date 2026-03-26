@@ -29,8 +29,10 @@ namespace CameraController
 
             cam.followDamping = 0;
 
-            RotationLimits newYawLimits = new(-180, 180, 0.7f, true);
-            RotationLimits newPitchLimits = new(-40, 40, 0.7f, false);
+            cam.sensitivity = new Vector2(0.7f, 0.7f);
+
+            RotationLimits newYawLimits = new(-180, 180, true);
+            RotationLimits newPitchLimits = new(-40, 40, false);
 
             cam.SetRotationLimits(newYawLimits, newPitchLimits);
 
