@@ -124,7 +124,7 @@ namespace CameraController
             targetFollower.rotation = newRotation;
         }
 
-        #region target follower rotation
+        #region target follower rotation control
         /// <summary>
         /// Get the next rotation on the specified axis
         /// </summary>
@@ -191,8 +191,7 @@ namespace CameraController
         /// <param name="currentRotation">th current rotation</param>
         /// <param name="minRotation">the minimum allowed rotation</param>
         /// <param name="maxRotation">the maximum allowed rotation</param>
-        /// <param name="wrap">Wether the rotation should go to the reached limit or the opposite limit.
-        /// <br>fo to the opposite limi of true</br>
+        /// <param name="wrap">Wether the rotation should stay at the reached limit or go at the opposite limit.
         /// </param>
         private Quaternion GetLimitToBeAt(Quaternion currentRotation, Quaternion minRotation, Quaternion maxRotation, bool wrap)
         {

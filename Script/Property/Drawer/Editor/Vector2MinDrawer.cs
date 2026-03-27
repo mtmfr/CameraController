@@ -22,7 +22,6 @@ namespace CameraController
                 newValue.x = newValue.x > minAttibute.yMin ? newValue.x : minAttibute.xMin;
                 newValue.y = newValue.y > minAttibute.yMin ? newValue.y : minAttibute.yMin;
 
-                vectorField.SetValueWithoutNotify(newValue);
             });
 
             return vectorField;

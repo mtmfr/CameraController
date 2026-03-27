@@ -14,12 +14,13 @@ namespace CameraController
 
         private new Camera camera;
 
+        [Tooltip("The offset applied on the camera")]
         [SerializeField] protected Vector3 offset;
 
         [Header("Follow")]
         [Tooltip("When the camera movement should be done")]
         [SerializeField] protected FollowMode followMode;
-        [Tooltip("How much the camera should lag behind it's target, 0 : always on target position")]
+        [Tooltip("How strongly the camera should follow it's target, 0 = always on target position")]
         [SerializeField, Min(0)] protected float followDamping;
         protected Vector3 followSmoothDampVelocity;
 

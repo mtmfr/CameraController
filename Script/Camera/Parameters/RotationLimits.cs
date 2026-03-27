@@ -6,15 +6,29 @@ namespace CameraController
     [Serializable]
     public struct RotationLimits : ISerializationCallbackReceiver
     {
+        [Tooltip("The smallest allowed angle of the camera")]
         [SerializeField, Clamp(-180, 180)] private float minAngleValue;
+
+        [Tooltip("The largest allowed angle of the camera")]
         [SerializeField, Clamp(-180, 180)] private float maxAngleValue;
+
+        [Tooltip("Should the rotation continue when reaching a limit")]
         [SerializeField] private bool wrap;
 
         private float preserializedMinAngle;
         private float preserializedMaxAngle;
 
+        /// <summary>
+        /// The smallest allowed angle of the rotation
+        /// </summary>
         public readonly float MinAngle => minAngleValue;
+        /// <summary>
+        /// The largest allowed angle of the rotation
+        /// </summary>
         public readonly float MaxAngle => maxAngleValue;
+        /// <summary>
+        /// Should the rotation continue when reaching a limit
+        /// </summary>
         public readonly bool Wrap => wrap;
 
         public RotationLimits(float minAngle, float maxAngle, bool wrap)

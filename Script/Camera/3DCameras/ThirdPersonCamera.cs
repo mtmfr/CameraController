@@ -7,10 +7,10 @@ namespace CameraController
     public class ThirdPersonCamera : Camera3D
     {
         [Header("Collider")]
-        [SerializeField] CameraCollisionParameters collisionParameters;
-        private CollisionDetection collisionParams => collisionParameters.collisionDetection;
+        [SerializeField] private CameraCollisionParameters collisionParameters;
+        private CollisionDetection collisionDetection => collisionParameters.collisionDetection;
         private DampingParams collisionDamping => collisionParameters.collisionDamping;
-        private RaycastHit[] collisionHits = new RaycastHit[2];
+        private readonly RaycastHit[] collisionHits = new RaycastHit[2];
 
         private Vector3 currentOffset;
         private float dampVelocity;
@@ -71,9 +71,9 @@ namespace CameraController
             Vector3 currentPos = targetFollower.position;
             Ray ray = new (currentPos, (desiredCameraPos - currentPos).normalized);
 
-            float castLength = Vector3.Distance(cameraTransform.position, currentPos) + collisionParams.colliderRadius;
+            float castLength = Vector3.Distance(cameraTransform.position, currentPos) + collisionDetection.colliderRadius;
 
-            int blockingObject = Physics.SphereCastNonAlloc(ray, collisionParams.colliderRadius, collisionHits, castLength, collisionParams.mask.value, collisionParams.collisionQuery);
+            int blockingObject = Physics.SphereCastNonAlloc(ray, collisionDetection.colliderRadius, collisionHits, castLength, collisionDetection.mask.value, collisionDetection.collisionQuery);
 
             if (blockingObject > 0)
             {
@@ -168,9 +168,9 @@ namespace CameraController
             cam.sensitivity = new Vector2(0.7f, 0.7f);
 
             cam.SetRotationLimits(newYawLimits, newPitchLimits);
-            cam.followDamping = 0.5f;
+            cam.followDamping = 0.1f;
 
-            CollisionDetection detection = new(0.5f, Physics.AllLayers, QueryTriggerInteraction.UseGlobal, true);
+            CollisionDetection detection = new(0.5f, Physics.AllLayers, QueryTriggerInteraction.UseGlobal);
             DampingParams damping = new(0.3f, DampingParams.EaseType.EaseIn);
 
             CameraCollisionParameters collisionParameters = new(true, detection, damping);
@@ -187,4 +187,3 @@ namespace CameraController
         #endif
     }
 }
-
