@@ -36,38 +36,20 @@ namespace CameraController
     }
 
     [Serializable]
-    public struct DampingParams
+    public struct SmoothingParameters
     {
         [Tooltip("How strong the applied damping is. 0 = no damping")]
-        [SerializeField, Min(0)] private float damping;
+        [SerializeField, Min(0)] private float smoothTime;
         [Tooltip("How the damping is applied the closer the object is from it's target")]
         [SerializeField] private EaseType easeType;
 
-        public readonly float Damping => damping;
+        public readonly float smoothingTime => smoothTime;
         public readonly EaseType EasingType => easeType;
 
-        public DampingParams(float damping, EaseType easeType)
+        public SmoothingParameters(float smoothingTime, EaseType easeType)
         {
-            damping = Mathf.Clamp01(damping);
-            this.damping = damping;
+            smoothTime = smoothingTime;
             this.easeType = easeType;
-        }
-
-        [Serializable]
-        public enum EaseType : byte
-        {
-            /// <summary>
-            /// Get closer the closest it is from the target
-            /// </summary>
-            EaseIn,
-            /// <summary>
-            /// Get slower the closer it is from the target
-            /// </summary>
-            EaseOut,
-            /// <summary>
-            /// Get faster when approaching the target then gets slower the closer it gets to it
-            /// </summary>
-            EaseInThenEaseOut
         }
     }
 

@@ -11,13 +11,18 @@ namespace CameraController
         private Quaternion pitchRotation = Quaternion.identity;
 
         /// <summary>
-        /// The rotation of the camera on the y axis
+        /// The rotation of the controller on the y axis
         /// </summary>
         public Quaternion yaw => yawRotation;
         /// <summary>
-        /// The rotation of the camera on the x axis
+        /// The rotation of the controller on the x axis
         /// </summary>
         public Quaternion pitch => pitchRotation;
+
+        /// <summary>
+        /// The rotation of the controller
+        /// </summary>
+        public Quaternion rotation => yaw * pitch;
 
         [Header("Rotation")]
         [Tooltip("Limits of the rotation on the x axis of the camera")]
@@ -26,33 +31,8 @@ namespace CameraController
         [SerializeField] private RotationLimits yawRotationLimits;
 
         [Header("Input")]
-        [SerializeField] private InputActionReference look;
-        [SerializeField, Vector2Min(0.1f, 0.1f)] protected Vector2 sensitivity;
+        [SerializeField] private CameraInput inputControl;
         private Vector2 lookInputDir;
-
-        public float horizontalSensitivity
-        {
-            get
-            {
-                return sensitivity.x;
-            }
-            set
-            {
-                sensitivity.x = value > 0.1f ? value : 0.1f;
-            }
-        }
-
-        public float verticalSensitivity
-        {
-            get
-            {
-                return sensitivity.y;
-            }
-            set
-            {
-                sensitivity.y = value > 0.1f ? value : 0.1f;
-            }
-        }
 
         protected virtual void OnEnable()
         {
@@ -60,14 +40,11 @@ namespace CameraController
             if (!EditorApplication.isPlaying)
                 return;
 #endif
-            if (look == null)
-            {
-                Debug.LogWarning("There is no input given to control the camera");
+            if (inputControl.lookAction == null)
                 return;
-            }
 
-            look.action.Enable();
-            look.action.performed += GetMovementDir;
+            inputControl.lookAction.Enable();
+            inputControl.lookAction.performed += GetMovementDir;
         }
 
         private void OnDisable()
@@ -76,11 +53,12 @@ namespace CameraController
             if (!EditorApplication.isPlaying)
                 return;
 #endif
-            if (look == null)
+
+            if (inputControl.lookAction == null)
                 return;
 
-            look.action.Disable();
-            look.action.performed -= GetMovementDir;
+            inputControl.lookAction.Disable();
+            inputControl.lookAction.performed -= GetMovementDir;
         }
 
         private void GetMovementDir(InputAction.CallbackContext context)
@@ -91,12 +69,11 @@ namespace CameraController
 #endif
             try
             {
-                Vector2 readInput = context.ReadValue<Vector2>();
-                lookInputDir = Vector2.Scale(readInput, sensitivity);
+                lookInputDir = context.ReadValue<Vector2>();
             }
             catch (InvalidOperationException)
             {
-                Debug.LogError($"The return type of {look.name} is not Vector2 but {look.action.activeValueType}");
+                Debug.LogError($"The return type of {inputControl.lookAction.name} is not Vector2 but {inputControl.lookAction.activeValueType}");
             }
         }
 
@@ -114,8 +91,8 @@ namespace CameraController
         /// </summary>
         private void SetTargetFollowerRotation()
         {
-            Quaternion yawRotationToApply = Quaternion.Euler(0, lookInputDir.x, 0);
-            Quaternion pitchRotationToApply = Quaternion.Euler(-lookInputDir.y, 0, 0);
+            Quaternion yawRotationToApply = Quaternion.Euler(0, lookInputDir.x * inputControl.horizontalSensitivity, 0);
+            Quaternion pitchRotationToApply = Quaternion.Euler(-lookInputDir.y * inputControl.verticalSensitivity, 0, 0);
 
             yawRotation = GetNewRotation(yawRotation, yawRotationToApply, Vector3.up, yawRotationLimits);
             pitchRotation = GetNewRotation(pitchRotation, pitchRotationToApply, Vector3.right, pitchRotationLimits);
@@ -222,10 +199,12 @@ namespace CameraController
         /// </summary>
         /// <param name="newYawLimits"></param>
         /// <param name="newPitchLimits"></param>
-        public void SetRotationLimits(RotationLimits newYawLimits, RotationLimits newPitchLimits)
+        protected void SetRotationLimits(RotationLimits newYawLimits, RotationLimits newPitchLimits)
         {
             yawRotationLimits = newYawLimits;
             pitchRotationLimits = newPitchLimits;
         }
+
+        protected void SetInputControl(CameraInput newInputControl) => inputControl = newInputControl;
     }
 }

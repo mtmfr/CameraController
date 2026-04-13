@@ -11,17 +11,17 @@ namespace CameraController
         [Tooltip("The parameters of the camera collision")]
         [SerializeField] private CollisionDetection collision;
         [Tooltip("How the camera should act when coming out of a collision")]
-        [SerializeField] private DampingParams dampingParams;
+        [SerializeField] private SmoothingParameters smoothingParams;
 
         public bool hasCollider => cameraHasCollider;
         public CollisionDetection collisionDetection => collision;
-        public DampingParams collisionDamping => dampingParams;
+        public SmoothingParameters collisionSmoothing => smoothingParams;
 
-        public CameraCollisionParameters(bool hasCollider, CollisionDetection collisionDetection, DampingParams dampingParams)
+        public CameraCollisionParameters(bool hasCollider, CollisionDetection collisionDetection, SmoothingParameters smoothingParams)
         {
             cameraHasCollider = hasCollider;
             collision = collisionDetection;
-            this.dampingParams = dampingParams;
+            this.smoothingParams = smoothingParams;
         }
     }
 }

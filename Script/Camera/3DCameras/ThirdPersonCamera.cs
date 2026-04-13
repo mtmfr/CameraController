@@ -1,6 +1,7 @@
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace CameraController
 {
@@ -9,11 +10,10 @@ namespace CameraController
         [Header("Collider")]
         [SerializeField] private CameraCollisionParameters collisionParameters;
         private CollisionDetection collisionDetection => collisionParameters.collisionDetection;
-        private DampingParams collisionDamping => collisionParameters.collisionDamping;
+        private SmoothingParameters collisionSmoothing => collisionParameters.collisionSmoothing;
         private readonly RaycastHit[] collisionHits = new RaycastHit[2];
 
         private Vector3 currentOffset;
-        private float dampVelocity;
 
         private void Start()
         {
@@ -55,7 +55,7 @@ namespace CameraController
 
             if (IsViewBlocked(desiredCameraPos, out Vector3 blockedPos))
                 cameraTransform.position = GetBlockedPosition(currentPosition, currentRotation, cameraTransform.position, blockedPos);
-            else GoToDesiredCameraPos(cameraTransform.position, currentRotation, desiredCameraPos);
+            else GoToDesiredCameraPos(currentRotation, desiredCameraPos);
 
             MakeCameraLookAtTarget();
         }
@@ -120,30 +120,12 @@ namespace CameraController
         /// <summary>
         /// Move the camera to the desired position
         /// </summary>
-        /// <param name="currentCameraPos">the current position of the camera</param>
         /// <param name="rotation">the rotation applied to the camera offset</param>
         /// <param name="desiredCameraPos">the position the camera should be at</param>
-        private void GoToDesiredCameraPos(Vector3 currentCameraPos, Quaternion rotation, Vector3 desiredCameraPos)
+        private void GoToDesiredCameraPos(Quaternion rotation, Vector3 desiredCameraPos)
         {
-            float currentOffsetForward = currentOffset.z;
-
-            if (currentOffsetForward - offset.z < 10e-3f)
-            {
-                currentOffset.z = offset.z;
-                cameraTransform.position = desiredCameraPos;
-            }
-            else
-            {
-                float deltaForward = offset.z - currentOffsetForward;
-                float newForward = collisionDamping.EasingType switch
-                {
-                    DampingParams.EaseType.EaseIn => currentOffsetForward + currentOffsetForward / collisionDamping.Damping * GetDeltaTime(),
-                    DampingParams.EaseType.EaseInThenEaseOut => Mathf.SmoothDamp(currentOffsetForward, offset.z, ref dampVelocity, collisionDamping.Damping, Mathf.Infinity, GetDeltaTime()),
-                    _ => currentOffsetForward + deltaForward / collisionDamping.Damping * GetDeltaTime(),
-                };
-                currentOffset.z = newForward;
-                cameraTransform.position = targetFollower.position + rotation * currentOffset;
-            }
+            currentOffset.z = Smoothing.SmoothValue(0, offset.z, currentOffset.z, collisionSmoothing.smoothingTime, collisionSmoothing.EasingType, GetDeltaTime());
+            cameraTransform.position = targetFollower.position + rotation * currentOffset;
         }
 
         private void MakeCameraLookAtTarget()
@@ -165,15 +147,27 @@ namespace CameraController
             RotationLimits newYawLimits = new(-180, 180, true);
             RotationLimits newPitchLimits = new(-40, 40, false);
 
-            cam.sensitivity = new Vector2(0.7f, 0.7f);
+            string defaultInputPath = "Assets/CameraController/CameraController_DefaultInput.inputactions";
+            InputActionReference actionReference = null;
+
+            if (AssetDatabase.AssetPathExists(defaultInputPath))
+            {
+                InputActionAsset actionAsset = AssetDatabase.LoadAssetAtPath<InputActionAsset>(defaultInputPath);
+
+                InputAction action = actionAsset.FindAction("Look");
+
+                actionReference = InputActionReference.Create(action);
+            }
+
+            cam.SetInputControl(CameraInput.CreateInputParameter(true, 0.7f, 0.7f, actionReference));
 
             cam.SetRotationLimits(newYawLimits, newPitchLimits);
             cam.followDamping = 0.1f;
 
             CollisionDetection detection = new(0.5f, Physics.AllLayers, QueryTriggerInteraction.UseGlobal);
-            DampingParams damping = new(0.3f, DampingParams.EaseType.EaseIn);
+            SmoothingParameters smoothing = new(0.3f, EaseType.EaseOut);
 
-            CameraCollisionParameters collisionParameters = new(true, detection, damping);
+            CameraCollisionParameters collisionParameters = new(true, detection, smoothing);
             cam.collisionParameters = collisionParameters;
 
             SceneView lastview = SceneView.lastActiveSceneView;

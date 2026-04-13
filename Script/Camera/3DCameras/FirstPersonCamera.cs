@@ -1,6 +1,7 @@
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace CameraController
 {
@@ -29,7 +30,19 @@ namespace CameraController
 
             cam.followDamping = 0;
 
-            cam.sensitivity = new Vector2(0.7f, 0.7f);
+            string defaultInputPath = "Assets/CameraController/CameraController_DefaultInput.inputactions";
+            InputActionReference actionReference = null;
+
+            if (AssetDatabase.AssetPathExists(defaultInputPath))
+            {
+                InputActionAsset actionAsset = AssetDatabase.LoadAssetAtPath<InputActionAsset>(defaultInputPath);
+
+                InputAction action = actionAsset.FindAction("Look");
+
+                actionReference = InputActionReference.Create(action);
+            }
+
+            cam.SetInputControl(CameraInput.CreateInputParameter(true, 0.7f, 0.7f, actionReference));
 
             RotationLimits newYawLimits = new(-180, 180, true);
             RotationLimits newPitchLimits = new(-40, 40, false);
