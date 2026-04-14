@@ -1,4 +1,3 @@
-using CameraController;
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -8,12 +7,24 @@ namespace CameraController
     [Serializable]
     public class CameraInput
     {
-        [SerializeField] private bool canControlCamera;
+        [Tooltip("The input for controlling the camera.")]
         [SerializeField] private InputActionReference controlInput;
+        [Tooltip("Wether the camera can be controlled.")]
+        [SerializeField] private bool canControlCamera;
+        [Tooltip("The sensitivity of the camera")]
         [SerializeField] private Vector2 sensitivity;
 
+        /// <summary>
+        /// Wether the camera can be controller or not.
+        /// </summary>
         public bool canCameraBeControlled => canControlCamera;
+        /// <summary>
+        ///The input to control the camera
+        /// </summary>
         public InputAction lookAction => controlInput ? controlInput.action : null;
+        /// <summary>
+        /// The horizontal sensibility of the camera
+        /// </summary>
         public float horizontalSensitivity
         {
             get
@@ -25,7 +36,9 @@ namespace CameraController
                 sensitivity.x = value < 0.1f ? 0.1f : value;
             }
         }
-
+        /// <summary>
+        /// The vertical sensibility of the camera
+        /// </summary>
         public float verticalSensitivity
         {
             get => sensitivity.y;

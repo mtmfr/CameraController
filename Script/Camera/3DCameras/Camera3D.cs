@@ -205,6 +205,10 @@ namespace CameraController
             pitchRotationLimits = newPitchLimits;
         }
 
+        //Used for creating the camera by context menu
+        /// <summary>
+        /// Set the value of the Camera input
+        /// </summary>
         protected void SetInputControl(CameraInput newInputControl) => inputControl = newInputControl;
     }
 }

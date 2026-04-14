@@ -5,7 +5,7 @@ namespace CameraController
     public static class Smoothing
     {
         /// <summary>
-        /// Give a value between the start and end value 
+        /// Smooth linearly the current value toward the end value 
         /// </summary>
         /// <param name="startValue">the original value</param>
         /// <param name="endValue">The ending value </param>
@@ -102,7 +102,7 @@ namespace CameraController
         }
 
         /// <summary>
-        /// Give a new vector between startPosition and endPosition
+        /// Smooth linearly the current position towards the end position
         /// </summary>
         /// <param name="startPosition">the position the object we want to move originaly have</param>
         /// <param name="endPosition">The position we want to reach</param>

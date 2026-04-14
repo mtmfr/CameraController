@@ -31,34 +31,15 @@ namespace CameraController
             lookAheadField.BindProperty(lookAheadProperty);
             root.Add(lookAheadField);
 
-            SerializedProperty smoothTimeProperty = property.FindPropertyRelative("smoothTime");
-            FloatField smoothTimeField = new("Smoothing Time");
-            smoothTimeField.BindProperty(smoothTimeProperty);
-            root.Add(smoothTimeField);
-
-            smoothTimeField.RegisterValueChangedCallback(callback =>
-            {
-                float newValue = callback.newValue;
-
-                if (newValue < 0)
-                    newValue = 0;
-
-                smoothTimeField.SetValueWithoutNotify(newValue);
-            });
-
-            SerializedProperty easeTypeProperty = property.FindPropertyRelative("easeType");
-            EnumField smoothTypeField = new("Easing Type");
-            smoothTypeField.BindProperty(easeTypeProperty);
-            smoothTimeField.Add(smoothTypeField);
-
-            smoothTypeField.style.width = new(Length.Percent(50f));
+            PropertyField smoothParamField = new(property.FindPropertyRelative("lookAheadSmoothing"));
+            root.Add(smoothParamField);
 
             hasInputToggle.RegisterValueChangedCallback(callback =>
             {
                 DisplayStyle displayStyle = callback.newValue ? DisplayStyle.Flex : DisplayStyle.None;
                 inputField.style.display = displayStyle;
                 lookAheadField.style.display = displayStyle;
-                smoothTimeField.style.display = displayStyle;
+                smoothParamField.style.display = displayStyle;
             });
 
 

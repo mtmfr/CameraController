@@ -7,11 +7,12 @@ namespace CameraController
 {
     public class Camera2D : BaseCamera
     {
-        [Header("OffsetDirection")]
+        [Header("Offset")]
         [Tooltip("Wether the offset needs to change with the target facing direction")]
         [SerializeField] private bool offsetFollowMovement;
-        [SerializeField, Min(0)] private float offsetSmoothingTime;
-        [SerializeField] private EaseType offsetEasingType;
+        [Tooltip("How long it takes for the offset to change")]
+        [SerializeField] SmoothingParameters offsetSmoothingParams;
+
         private float offsetFacingDir = 1f;
 
         [Header("LookAhead")]
@@ -53,7 +54,7 @@ namespace CameraController
                 return;
 
             base.UpdateCamera();
-            LookAhead();
+            UpdateLookAhead();
             UpdateOffsetDirection();
         }
 
@@ -92,22 +93,19 @@ namespace CameraController
         {
             float targetXOffset = offset.x * offsetFacingDir;
 
-            currentOffset.x = Smoothing.SmoothValue(-targetXOffset, targetXOffset, currentOffset.x, offsetSmoothingTime, offsetEasingType, GetDeltaTime());
-
-            //float offsetSpeed = offset.x / offsetSmoothingTime;
-
-            //if (!float.IsFinite(offsetSpeed))
-            //{
-            //    currentOffset.x = targetXOffset;
-            //    return;
-            //}
-
-            //currentOffset.x = Mathf.MoveTowards(currentOffset.x, targetXOffset, offsetSpeed * GetDeltaTime());
+            currentOffset.x = Smoothing.SmoothValue(-targetXOffset, targetXOffset, currentOffset.x, offsetSmoothingParams.smoothingTime, offsetSmoothingParams.EasingType, GetDeltaTime());
         }
 
+        /// <summary>
+        /// Set the value of the look ahead input
+        /// </summary>
+        /// <param name="context"></param>
         private void SetLookAheadDir(InputAction.CallbackContext context) => lookAheadInputDir = context.ReadValue<Vector2>();
         
-        private void LookAhead()
+        /// <summary>
+        /// Update the current look ahead
+        /// </summary>
+        private void UpdateLookAhead()
         {
             float newXLookAhead = GetNewLookAhead(0, lookAheadInputDir.x, lookAheadControl.maxLookAhead.x, currentLookAhead.x);
             float newYLookAhead = GetNewLookAhead(0, lookAheadInputDir.y, lookAheadControl.maxLookAhead.y, currentLookAhead.y);
@@ -115,21 +113,27 @@ namespace CameraController
             currentLookAhead = new(newXLookAhead, newYLookAhead);
         }
 
+        /// <summary>
+        /// Get the new lookahead of the given value.
+        /// </summary>
+        /// <param name="startValue">the default position if no input are given.</param>
+        /// <param name="inputDir">the direction of the input. Should be '-1' or '1'.</param>
+        /// <param name="maxLookAhead">the maximum value the lookahead can have. Is the limit for both the positive and negative.</param>
+        /// <param name="currentValue">The current look ahead.</param>
+        /// <returns>The new value of the look ahead</returns>
         private float GetNewLookAhead(float startValue, float inputDir, float maxLookAhead, float currentValue)
         {
+            //Go to default value if there are no input
             if (Mathf.Approximately(inputDir, 0))
-            {
                 return Smoothing.SmoothValue(maxLookAhead * Mathf.Sign(currentValue), 0, currentValue, lookAheadControl.smoothingTime, lookAheadControl.easingType, GetDeltaTime());
-            }
 
             float targetValue = inputDir * maxLookAhead;
-
+            //If the target value is the opposite of the current value
             if (Mathf.Sign(targetValue) != Mathf.Sign(currentValue) && !Mathf.Approximately(currentValue, 0))
                 return Smoothing.SmoothValue(-targetValue, targetValue, currentValue, lookAheadControl.smoothingTime, lookAheadControl.easingType, GetDeltaTime());
 
             return Smoothing.SmoothValue(startValue, targetValue, currentValue, lookAheadControl.smoothingTime, lookAheadControl.easingType, GetDeltaTime());
         }
-
 
         [MenuItem("GameObject/CameraController/2DCamera", false, 2)]
         private static void CreateCamera()
@@ -148,9 +152,9 @@ namespace CameraController
                 InputAction action = actionAsset.FindAction("LookAhead");
 
                 InputActionReference actionReference = InputActionReference.Create(action);
-                cam.lookAheadControl = Camera2DLookAheadControl.Create(true, Vector2.one, 0.3f, EaseType.Linear, actionReference);
+                cam.lookAheadControl = new(true, Vector2.one, 0.3f, EaseType.Linear, actionReference);
             }
-            else cam.lookAheadControl = Camera2DLookAheadControl.Create(true, Vector2.zero, 0.3f, EaseType.Linear);
+            else cam.lookAheadControl = new(true, Vector2.zero, 0.3f, EaseType.Linear);
             
             SceneView lastview = SceneView.lastActiveSceneView;
             toCreate.transform.position = lastview ? lastview.pivot : Vector3.zero;

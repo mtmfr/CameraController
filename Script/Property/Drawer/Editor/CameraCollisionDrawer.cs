@@ -10,24 +10,43 @@ namespace CameraController
         public override VisualElement CreatePropertyGUI(SerializedProperty property)
         {
             VisualElement root = new();
-            PropertyField hasColliderProperty = new(property.FindPropertyRelative("cameraHasCollider"), "cameraCollider");
+            SerializedProperty hasColliderProperty = property.FindPropertyRelative("cameraHasCollider");
+            Toggle hasColliderToggle = new("Has Collider");
+            hasColliderToggle.BindProperty(hasColliderProperty);
+            root.Add(hasColliderToggle);
 
-            root.Add(hasColliderProperty);
 
-            PropertyField collisionDetectionProperty = new(property.FindPropertyRelative("collision"), "collisionDetection");
-            PropertyField dampingProperty = new(property.FindPropertyRelative("dampingParams"), "collisionDamping");
+            SerializedProperty collisionDetectionProperty = property.FindPropertyRelative("collision");
+            Label collisionDetectionLabel = new(collisionDetectionProperty.displayName);
 
-            root.Add(collisionDetectionProperty);
-            root.Add(dampingProperty);
+            Foldout collisionDetectionFoldout = new();
+            collisionDetectionFoldout.text = collisionDetectionLabel.text;
+            root.Add(collisionDetectionFoldout);
 
-            hasColliderProperty.RegisterValueChangeCallback(callback =>
+            SerializedProperty collisionRadiusProperty = collisionDetectionProperty.FindPropertyRelative("collisionRadius");
+            FloatField collisionRadiusField = new("Collider Radius");
+            collisionRadiusField.BindProperty(collisionRadiusProperty);
+            collisionDetectionFoldout.Add(collisionRadiusField);
+
+            SerializedProperty collisionMaskProperty = collisionDetectionProperty.FindPropertyRelative("collisionMask");
+            LayerMaskField collisionMaskField = new(collisionMaskProperty.displayName);
+            collisionMaskField.BindProperty(collisionMaskProperty);
+            collisionDetectionFoldout.Add(collisionMaskField);
+
+            SerializedProperty queryProperty = collisionDetectionProperty.FindPropertyRelative("queryParameters");
+            EnumField queryField = new("Collision Query");
+            queryField.BindProperty(queryProperty);
+            collisionDetectionFoldout.Add(queryField);
+
+            PropertyField smoothingField = new(property.FindPropertyRelative("smoothingParams"), "Collision Smoothing");
+            root.Add(smoothingField);
+
+            hasColliderToggle.RegisterValueChangedCallback(callback =>
             {
-                bool value = callback.changedProperty.boolValue;
+                DisplayStyle displayStyle = callback.newValue ? DisplayStyle.Flex : DisplayStyle.None;
 
-                DisplayStyle displayStyle = value ? DisplayStyle.Flex : DisplayStyle.None;
-
-                collisionDetectionProperty.style.display = displayStyle;
-                dampingProperty.style.display = displayStyle;
+                collisionDetectionFoldout.style.display = displayStyle;
+                smoothingField.style.display = displayStyle;
             });
 
             return root;

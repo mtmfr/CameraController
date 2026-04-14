@@ -6,6 +6,7 @@ namespace CameraController
     [Serializable]
     public struct CollisionDetection
     {
+        [Tooltip("The radius of the collider of the camera")]
         [SerializeField] private float collisionRadius;
         [Tooltip("Define which layer the camera should collide with")]
         [SerializeField] private LayerMask collisionMask;
@@ -32,24 +33,6 @@ namespace CameraController
             this.collisionRadius = collisionRadius;
             this.collisionMask = collisionMask;
             this.queryParameters = queryParameters;
-        }
-    }
-
-    [Serializable]
-    public struct SmoothingParameters
-    {
-        [Tooltip("How strong the applied damping is. 0 = no damping")]
-        [SerializeField, Min(0)] private float smoothTime;
-        [Tooltip("How the damping is applied the closer the object is from it's target")]
-        [SerializeField] private EaseType easeType;
-
-        public readonly float smoothingTime => smoothTime;
-        public readonly EaseType EasingType => easeType;
-
-        public SmoothingParameters(float smoothingTime, EaseType easeType)
-        {
-            smoothTime = smoothingTime;
-            this.easeType = easeType;
         }
     }
 
