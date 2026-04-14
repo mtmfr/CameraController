@@ -10,15 +10,15 @@ namespace CameraController
         [Header("OffsetDirection")]
         [Tooltip("Wether the offset needs to change with the target facing direction")]
         [SerializeField] private bool offsetFollowMovement;
-        [SerializeField, Min(0)] private float offsetDamping;
-        private float offsetDir = 1f;
+        [SerializeField, Min(0)] private float offsetSmoothingTime;
+        [SerializeField] private EaseType offsetEasingType;
+        private float offsetFacingDir = 1f;
 
         [Header("LookAhead")]
-        [SerializeField] private InputActionReference lookAheadInput;
-        [SerializeField] private Vector2 maxLookAhead;
-        [SerializeField, Min(0)] private float lookAheadDamping;
-        private Vector2 lookAheadDir;
-        private Vector2 lookAhead;
+        [SerializeField] private Camera2DLookAheadControl lookAheadControl;
+
+        private Vector2 lookAheadInputDir;
+        private Vector2 currentLookAhead;
 
         private Vector3 currentOffset;
 
@@ -29,14 +29,22 @@ namespace CameraController
 
         private void OnEnable()
         {
-            if (lookAheadInput != null)
-                lookAheadInput.action.performed += SetLookAheadDir;
+#if (UNITY_EDITOR)
+            if (!EditorApplication.isPlaying)
+                return;
+#endif
+            if (lookAheadControl.action != null)
+                lookAheadControl.action.performed += SetLookAheadDir;
         }
 
         private void OnDisable()
         {
-            if(lookAheadInput != null)
-                lookAheadInput.action.performed -= SetLookAheadDir;
+#if (UNITY_EDITOR)
+            if (!EditorApplication.isPlaying)
+                return;
+#endif
+            if (lookAheadControl.action != null)
+                lookAheadControl.action.performed -= SetLookAheadDir;
         }
 
         protected override void UpdateCamera()
@@ -46,6 +54,7 @@ namespace CameraController
 
             base.UpdateCamera();
             LookAhead();
+            UpdateOffsetDirection();
         }
 
         protected override void UpdateFollowerPosition()
@@ -56,7 +65,7 @@ namespace CameraController
             Vector3 deltaPos = targetPos - followerPos;
 
             if (offsetFollowMovement && !Mathf.Approximately(deltaPos.x, 0f))
-                offsetDir = Mathf.Sign(deltaPos.x);
+                offsetFacingDir = Mathf.Sign(deltaPos.x);
 
             if (!Mathf.Approximately(followDamping, 0f))
             {
@@ -71,61 +80,54 @@ namespace CameraController
 
         protected override void UpdateCameraPosition()
         {
-            Vector3 targetOffset = offset;
-            targetOffset.x *= offsetDir;
+            UpdateOffsetDirection();
 
-            Vector3 offsetSpeed = (targetOffset - currentOffset) / offsetDamping;
-
-            if (!float.IsFinite(offsetSpeed.x))
-            {
-                cameraTransform.position = targetFollower.position + targetOffset;
-                return;
-            }
-
-            Vector3 newOffset = currentOffset + offsetSpeed * GetDeltaTime();
-
-            currentOffset = newOffset;
-
-            cameraTransform.position = targetFollower.position + currentOffset + (Vector3)lookAhead;
+            cameraTransform.position = targetFollower.position + currentOffset + (Vector3)currentLookAhead;
         }
 
-        private void SetLookAheadDir(InputAction.CallbackContext context) => lookAheadDir = context.ReadValue<Vector2>();
+        /// <summary>
+        /// Update the direction the offset is looking at when the target facing direction change
+        /// </summary>
+        private void UpdateOffsetDirection()
+        {
+            float targetXOffset = offset.x * offsetFacingDir;
+
+            currentOffset.x = Smoothing.SmoothValue(-targetXOffset, targetXOffset, currentOffset.x, offsetSmoothingTime, offsetEasingType, GetDeltaTime());
+
+            //float offsetSpeed = offset.x / offsetSmoothingTime;
+
+            //if (!float.IsFinite(offsetSpeed))
+            //{
+            //    currentOffset.x = targetXOffset;
+            //    return;
+            //}
+
+            //currentOffset.x = Mathf.MoveTowards(currentOffset.x, targetXOffset, offsetSpeed * GetDeltaTime());
+        }
+
+        private void SetLookAheadDir(InputAction.CallbackContext context) => lookAheadInputDir = context.ReadValue<Vector2>();
         
         private void LookAhead()
         {
-            float xLookAhead = lookAhead.x;
+            float newXLookAhead = GetNewLookAhead(0, lookAheadInputDir.x, lookAheadControl.maxLookAhead.x, currentLookAhead.x);
+            float newYLookAhead = GetNewLookAhead(0, lookAheadInputDir.y, lookAheadControl.maxLookAhead.y, currentLookAhead.y);
 
-            if (!Mathf.Approximately(lookAheadDir.x, 0f))
-            {
-                float desiredValue = Mathf.Sign(lookAheadDir.x) * maxLookAhead.x;
-
-                xLookAhead = GetLookAhead(xLookAhead, desiredValue, lookAheadDamping);
-            }
-            else
-                xLookAhead = GetLookAhead(xLookAhead, 0, lookAheadDamping);
-
-            float yLookAhead = lookAhead.y;
-
-            if (!Mathf.Approximately(lookAheadDir.y, 0f))
-            {
-                float desiredValue = Mathf.Sign(lookAheadDir.y) * maxLookAhead.y;
-                yLookAhead = GetLookAhead(yLookAhead, desiredValue, lookAheadDamping);
-            }
-            else
-                yLookAhead = GetLookAhead(yLookAhead, 0, lookAheadDamping);
-
-            lookAhead = new Vector2(xLookAhead, yLookAhead);
+            currentLookAhead = new(newXLookAhead, newYLookAhead);
         }
 
-        private float GetLookAhead(float currentLookAhead, float maxLookAhead, float damping)
+        private float GetNewLookAhead(float startValue, float inputDir, float maxLookAhead, float currentValue)
         {
-            float value = currentLookAhead;
+            if (Mathf.Approximately(inputDir, 0))
+            {
+                return Smoothing.SmoothValue(maxLookAhead * Mathf.Sign(currentValue), 0, currentValue, lookAheadControl.smoothingTime, lookAheadControl.easingType, GetDeltaTime());
+            }
 
-            float changeVelocity = (maxLookAhead - currentLookAhead) / damping;
+            float targetValue = inputDir * maxLookAhead;
 
-            float nextValue = value + changeVelocity * GetDeltaTime();
+            if (Mathf.Sign(targetValue) != Mathf.Sign(currentValue) && !Mathf.Approximately(currentValue, 0))
+                return Smoothing.SmoothValue(-targetValue, targetValue, currentValue, lookAheadControl.smoothingTime, lookAheadControl.easingType, GetDeltaTime());
 
-            return float.IsFinite(nextValue) ? nextValue : maxLookAhead;
+            return Smoothing.SmoothValue(startValue, targetValue, currentValue, lookAheadControl.smoothingTime, lookAheadControl.easingType, GetDeltaTime());
         }
 
 
@@ -138,6 +140,18 @@ namespace CameraController
             cam.offset = new Vector3(0, 0, -10);
             cam.followDamping = 0f;
 
+            string defaultInputPath = "Assets/CameraController/CameraController_DefaultInput.inputactions";
+
+            if (AssetDatabase.AssetPathExists(defaultInputPath))
+            {
+                InputActionAsset actionAsset = AssetDatabase.LoadAssetAtPath<InputActionAsset>(defaultInputPath);
+                InputAction action = actionAsset.FindAction("LookAhead");
+
+                InputActionReference actionReference = InputActionReference.Create(action);
+                cam.lookAheadControl = Camera2DLookAheadControl.Create(true, Vector2.one, 0.3f, EaseType.Linear, actionReference);
+            }
+            else cam.lookAheadControl = Camera2DLookAheadControl.Create(true, Vector2.zero, 0.3f, EaseType.Linear);
+            
             SceneView lastview = SceneView.lastActiveSceneView;
             toCreate.transform.position = lastview ? lastview.pivot : Vector3.zero;
             StageUtility.PlaceGameObjectInCurrentStage(toCreate);
